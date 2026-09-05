@@ -24,8 +24,8 @@ function NotificationsPage() {
     filterRead === "all"
       ? notifications
       : filterRead === "unread"
-        ? notifications.filter((n) => !n.read)
-        : notifications.filter((n) => n.read);
+        ? notifications.filter((n) => !n.is_read)
+        : notifications.filter((n) => n.is_read);
 
   if (isLoading) {
     return (
@@ -50,7 +50,7 @@ function NotificationsPage() {
     );
   }
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   if (notifications.length === 0) {
     return (
@@ -110,7 +110,7 @@ function NotificationsPage() {
                 : "border border-border bg-card hover:bg-muted"
             }`}
           >
-            Read ({notifications.filter((n) => n.read).length})
+            Read ({notifications.filter((n) => n.is_read).length})
           </button>
         </div>
       </div>
@@ -129,7 +129,7 @@ function NotificationsPage() {
             <div
               key={notification._id || notification.id}
               className={`rounded-2xl border p-4 sm:p-5 transition ${
-                !notification.read
+                !notification.is_read
                   ? "border-accent/30 bg-accent/5 hover:bg-accent/10"
                   : "border-border bg-card hover:bg-muted/50"
               }`}
@@ -138,7 +138,7 @@ function NotificationsPage() {
                 {/* Icon */}
                 <div
                   className={`flex-shrink-0 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg ${
-                    !notification.read
+                    !notification.is_read
                       ? "bg-accent/20 text-accent"
                       : "bg-muted text-muted-foreground"
                   }`}
@@ -163,7 +163,7 @@ function NotificationsPage() {
                           "No additional details"}
                       </p>
                     </div>
-                    {!notification.read && (
+                    {!notification.is_read && (
                       <div className="flex-shrink-0 h-2 w-2 rounded-full bg-accent" />
                     )}
                   </div>

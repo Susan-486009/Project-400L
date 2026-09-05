@@ -1,18 +1,9 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import {
-  Bell,
-  Search,
-  ChevronDown,
-  LogOut,
-  Check,
-  ExternalLink,
-  Menu,
-  X,
-} from "lucide-react";
+import { Bell, Search, ChevronDown, LogOut, Check, ExternalLink, Menu, X } from "lucide-react";
 import { Logo } from "./Logo";
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
-import { type User, notificationService } from "@/lib/api";
+import { type User, type Notification, notificationService } from "@/lib/api";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
@@ -23,14 +14,7 @@ export interface NavItem {
   icon: ComponentType<{ className?: string }>;
 }
 
-interface DashboardNotification {
-  _id: string;
-  title: string;
-  message: string;
-  is_read: boolean;
-  created_at: string;
-  reference_link?: string;
-}
+type DashboardNotification = Notification;
 
 export function StaffShell({
   nav,
@@ -126,7 +110,7 @@ export function StaffShell({
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          
+
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map((n) => {
               const active = ["/superadmin", "/admin", "/dashboard", "/staff"].includes(n.to)
@@ -142,7 +126,9 @@ export function StaffShell({
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                  <n.icon className={`h-4 w-4 ${active ? "text-accent" : "text-muted-foreground"}`} />
+                  <n.icon
+                    className={`h-4 w-4 ${active ? "text-accent" : "text-muted-foreground"}`}
+                  />
                   {n.label}
                 </Link>
               );
@@ -195,7 +181,9 @@ export function StaffShell({
                           <div className="flex items-start justify-between gap-2">
                             <h4 className="text-xs font-bold">{n.title}</h4>
                             <span className="whitespace-nowrap text-[10px] text-muted-foreground">
-                              {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                              {n.created_at
+                                ? formatDistanceToNow(new Date(n.created_at), { addSuffix: true })
+                                : ""}
                             </span>
                           </div>
                           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -244,7 +232,9 @@ export function StaffShell({
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
                   {initials}
                 </div>
-                <span className="hidden text-sm font-medium md:inline">{user?.name || "Staff"}</span>
+                <span className="hidden text-sm font-medium md:inline">
+                  {user?.name || "Staff"}
+                </span>
                 <ChevronDown
                   className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${
                     dropdownOpen ? "rotate-180" : ""
@@ -289,7 +279,9 @@ export function StaffShell({
                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
                   >
-                    <n.icon className={`h-5 w-5 ${active ? "text-accent" : "text-muted-foreground"}`} />
+                    <n.icon
+                      className={`h-5 w-5 ${active ? "text-accent" : "text-muted-foreground"}`}
+                    />
                     {n.label}
                   </Link>
                 );
@@ -305,7 +297,9 @@ export function StaffShell({
         {children}
       </main>
 
-      {dropdownOpen && <div className="fixed inset-0 z-20" onClick={() => setDropdownOpen(false)} />}
+      {dropdownOpen && (
+        <div className="fixed inset-0 z-20" onClick={() => setDropdownOpen(false)} />
+      )}
       {notifOpen && <div className="fixed inset-0 z-20" onClick={() => setNotifOpen(false)} />}
     </div>
   );

@@ -15,7 +15,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { complaintService } from "@/lib/api";
+import { complaintService, type Complaint } from "@/lib/api";
 import { StatusBadge, formatCategory } from "@/lib/ui-shared";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -33,14 +33,14 @@ function StaffBoard() {
   const [noteText, setNoteText] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const { data: rawComplaints = [], isLoading, refetch } = useQuery({
+  const { data: rawComplaints, isLoading, refetch } = useQuery({
     queryKey: ["staff-complaints"],
     queryFn: () => complaintService.getAll(),
     retry: 1,
   });
 
-  const complaints = Array.isArray(rawComplaints)
-    ? rawComplaints
+  const complaints = Array.isArray((rawComplaints as any)?.complaints)
+    ? ((rawComplaints as any)?.complaints as Complaint[]) || []
     : (rawComplaints as any)?.data || [];
 
   const { data: active, isLoading: detailLoading } = useQuery({

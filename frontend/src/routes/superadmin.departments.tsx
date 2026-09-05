@@ -17,13 +17,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const availableCategories = [
+  { value: "academic-result", label: "Academic Results" },
+  { value: "academic-lecturer", label: "Academic / Lecturers" },
   { value: "facility-maint", label: "Campus Facilities" },
   { value: "facility-hostel", label: "Hostel & Welfare" },
   { value: "admin-staff", label: "Administrative Process" },
   { value: "security", label: "Security & Safety" },
   { value: "financial", label: "Financial / Payments" },
   { value: "it-service", label: "IT Portal Services" },
-  { value: "delicate", label: "Sensitive & Delicate" },
   { value: "other", label: "Other Issues" },
 ];
 
@@ -56,12 +57,6 @@ function DepartmentsPage() {
     queryKey: ["departments"],
     queryFn: () => departmentService.getAll(),
   });
-
-  const { data: staffData } = useQuery({
-    queryKey: ["staff-users"],
-    queryFn: () => authService.getUsers({ role: "staff" }),
-  });
-  const staffUsers = staffData?.users || [];
 
   const { data: allStaffData } = useQuery({
     queryKey: ["all-staff-users"],
@@ -104,7 +99,6 @@ function DepartmentsPage() {
       authService.updateUser(userId, { department_id: deptId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-staff-users"] });
-      queryClient.invalidateQueries({ queryKey: ["staff-users"] });
       toast.success("Staff assignment updated.");
       setAssigningStaffId("");
     },

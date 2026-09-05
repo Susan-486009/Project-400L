@@ -9,12 +9,12 @@ export const getAllDepartments = asyncHandler(async (req, res) => {
 });
 
 export const createDepartment = asyncHandler(async (req, res) => {
-  const { name, description, head_id } = req.body;
+  const { name, description, head_id, categories } = req.body;
   
   const existing = await Department.findOne({ name });
   if (existing) throw new AppError('Department already exists.', 400);
 
-  const dept = await Department.create({ name, description, head_id });
+  const dept = await Department.create({ name, description, head_id, categories: categories || [] });
   sendSuccess(res, dept, 'Department created successfully.', 201);
 });
 

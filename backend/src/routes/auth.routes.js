@@ -6,6 +6,8 @@ import {
   validateRegister,
   validateLogin,
   validateChangePassword,
+  validateForgotPassword,
+  validateResetPassword,
 } from '../middleware/validate.middleware.js';
 
 const router = Router();
@@ -38,6 +40,20 @@ router.post('/logout', auth.logout);
  * Returns: { accessToken }
  */
 router.post('/refresh', refreshAuth);
+
+/**
+ * POST /api/v1/auth/forgot-password
+ * Body: { email }
+ * Returns: generic confirmation (never reveals if the account exists).
+ */
+router.post('/forgot-password', validateForgotPassword, auth.forgotPassword);
+
+/**
+ * POST /api/v1/auth/reset-password
+ * Body: { token, newPassword }
+ * Returns: success confirmation.
+ */
+router.post('/reset-password', validateResetPassword, auth.resetPassword);
 
 /* ─── Protected (requires valid access token) ──────────── */
 

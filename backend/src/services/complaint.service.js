@@ -10,6 +10,59 @@ import {
   processAndStore,
   safeCleanRaw,
 } from './file.service.js';
+import { sendComplaintEmail } from './email.service.js';
+
+/* ══════════════════════════════════════════════════════
+   EMAIL — fire-and-forget student notification.
+   Only sends when the user has an email, hasn't opted out,
+   and the complaint is not anonymous. Never throws.
+══════════════════════════════════════════════════════ */
+async function notifyStudentByEmail({ complaintUserId, referenceId, title, status, feedback, actionLabel }) {
+  try {
+    if (!complaintUserId) return;
+    const user = await User.findById(complaintUserId).select('email settings name').lean();
+    if (!user || !user.email) return;
+    if (user.settings?.email_notifications === false) return;
+
+    await sendComplaintEmail({
+      to: user.email,
+      name: user.name,
+      referenceId,
+      title,
+      status,
+      feedback,
+      actionLabel,
+    });
+  } catch (err) {
+    console.error('[email] notifyStudentByEmail error:', err.message);
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   EMAIL — fire-and-forget staff notification.
+   Sends when a complaint is assigned to a staff member
+   or when a case they own is updated. Never throws.
+══════════════════════════════════════════════════════ */
+async function notifyStaffByEmail({ staffId, referenceId, title, status, feedback, actionLabel }) {
+  try {
+    if (!staffId) return;
+    const staff = await User.findById(staffId).select('email settings name').lean();
+    if (!staff || !staff.email) return;
+    if (staff.settings?.email_notifications === false) return;
+
+    await sendComplaintEmail({
+      to: staff.email,
+      name: staff.name,
+      referenceId,
+      title,
+      status,
+      feedback,
+      actionLabel,
+    });
+  } catch (err) {
+    console.error('[email] notifyStaffByEmail error:', err.message);
+  }
+}
 
 export const complaintService = {
 
@@ -150,6 +203,27 @@ export const complaintService = {
           }
         }).catch(err => console.error("AI Draft Generation failed:", err));
       });
+
+      // Email the student a receipt with their reference ID (non-blocking)
+      if (!anonymous) {
+        notifyStudentByEmail({
+          complaintUserId: userId,
+          referenceId,
+          title: title.trim(),
+          status: 'pending',
+        });
+      }
+
+      // Email the assigned staff member about the new case (non-blocking)
+      if (assignedStaffId) {
+        notifyStaffByEmail({
+          staffId: assignedStaffId,
+          referenceId,
+          title: title.trim(),
+          status: 'pending',
+          actionLabel: 'A new complaint has been assigned to you',
+        });
+      }
 
       return {
         id:          newComplaint._id.toString(),
@@ -340,34 +414,46 @@ export const complaintService = {
 
     const total = await Complaint.countDocuments(filter);
 
-    return complaints.map(c => {
-      let user_name = null;
-      let matric = null;
-      if (c.user_id) {
-        if (!c.anonymous) {
-          user_name = c.user_id.name;
-          matric = c.user_id.matric;
-        } else {
-          const hash = crypto.createHash('md5').update(c.user_id._id.toString()).digest('hex').substring(0, 6).toUpperCase();
-          user_name = `Anonymous Student (${hash})`;
-          matric = `ANON-${hash}`;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 50;
+    const pages = Math.ceil(total / limitNum) || 1;
+
+    return {
+      complaints: complaints.map(c => {
+        let user_name = null;
+        let matric = null;
+        if (c.user_id) {
+          if (!c.anonymous) {
+            user_name = c.user_id.name;
+            matric = c.user_id.matric;
+          } else {
+            const hash = crypto.createHash('md5').update(c.user_id._id.toString()).digest('hex').substring(0, 6).toUpperCase();
+            user_name = `Anonymous Student (${hash})`;
+            matric = `ANON-${hash}`;
+          }
         }
-      }
-      return {
-        _id: c._id.toString(),
-        reference_id: c.reference_id,
-        category: c.category,
-        title: c.title,
-        status: c.status,
-        priority: c.priority,
-        anonymous: c.anonymous,
-        created_at: c.created_at,
-        updated_at: c.updated_at,
-        user_name,
-        matric,
-        file_count: c.files ? c.files.length : 0,
-      };
-    });
+        return {
+          _id: c._id.toString(),
+          reference_id: c.reference_id,
+          category: c.category,
+          title: c.title,
+          status: c.status,
+          priority: c.priority,
+          anonymous: c.anonymous,
+          created_at: c.created_at,
+          updated_at: c.updated_at,
+          user_name,
+          matric,
+          file_count: c.files ? c.files.length : 0,
+        };
+      }),
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages,
+      },
+    };
   },
 
   /* ══════════════════════════════════════════════════════
@@ -406,6 +492,30 @@ export const complaintService = {
         message: `Your case #${complaint.reference_id} status has been changed to ${status.replace('_', ' ')}.${adminFeedback && adminFeedback.trim() !== '' ? ' Reply: ' + adminFeedback.trim() : ''}`,
         type: 'status_update',
         reference_link: `/track?id=${complaint.reference_id}`
+      });
+    }
+
+    // Email the student about the status change (non-blocking)
+    if (!complaint.anonymous) {
+      notifyStudentByEmail({
+        complaintUserId: complaint.user_id,
+        referenceId: complaint.reference_id,
+        title: complaint.title,
+        status,
+        feedback: adminFeedback && adminFeedback.trim() !== '' ? adminFeedback.trim() : '',
+        actionLabel: `Your case status has changed to ${status.replace('_', ' ')}`,
+      });
+    }
+
+    // Email the assigned staff about the status change (non-blocking)
+    if (complaint.assigned_staff_id) {
+      notifyStaffByEmail({
+        staffId: complaint.assigned_staff_id,
+        referenceId: complaint.reference_id,
+        title: complaint.title,
+        status,
+        feedback: adminFeedback && adminFeedback.trim() !== '' ? adminFeedback.trim() : '',
+        actionLabel: `Case #${complaint.reference_id} status changed to ${status.replace('_', ' ')}`,
       });
     }
 

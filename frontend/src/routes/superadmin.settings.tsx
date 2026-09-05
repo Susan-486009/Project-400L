@@ -17,7 +17,7 @@ import {
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { authService, type UserSettings } from "@/lib/api";
+import { authService, platformConfigService, type UserSettings } from "@/lib/api";
 import { applyTheme } from "@/lib/theme";
 import { motion } from "framer-motion";
 
@@ -41,6 +41,11 @@ function SuperadminSettingsPage() {
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["me"],
     queryFn: () => authService.me(),
+  });
+
+  const { data: backendConfig, isLoading: configLoading } = useQuery({
+    queryKey: ["platform-config"],
+    queryFn: () => platformConfigService.get(),
   });
 
   // Personal form state
@@ -85,17 +90,17 @@ function SuperadminSettingsPage() {
         },
       });
     }
-
-    // Load persisted platform config
-    const savedConfig = localStorage.getItem("resolve_global_config");
-    if (savedConfig) {
-      try {
-        setPlatformConfig(JSON.parse(savedConfig));
-      } catch (e) {
-        // Fallback to defaults
-      }
-    }
   }, [user]);
+
+  // Sync platform config from backend into local form state
+  useEffect(() => {
+    if (backendConfig) {
+      setPlatformConfig((prev) => ({
+        ...prev,
+        ...backendConfig,
+      }));
+    }
+  }, [backendConfig]);
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => authService.updateProfile(data),
@@ -147,9 +152,20 @@ function SuperadminSettingsPage() {
     });
   };
 
+  const platformConfigMutation = useMutation({
+    mutationFn: (config: any) => platformConfigService.update(config),
+    onSuccess: (saved) => {
+      localStorage.setItem("resolve_global_config", JSON.stringify(saved));
+      toast.success("Institutional platform policies deployed successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to deploy platform policies");
+    },
+  });
+
   const handleSavePlatformConfig = () => {
     localStorage.setItem("resolve_global_config", JSON.stringify(platformConfig));
-    toast.success("Institutional platform policies deployed successfully");
+    platformConfigMutation.mutate(platformConfig);
   };
 
   const handleLogout = () => {
@@ -673,9 +689,14 @@ function SuperadminSettingsPage() {
             <div className="flex items-center justify-end pt-4">
               <button
                 onClick={handleSavePlatformConfig}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-2.5 text-sm font-semibold text-primary-foreground shadow-md hover:opacity-90 transition"
+                disabled={platformConfigMutation.isPending}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-2.5 text-sm font-semibold text-primary-foreground shadow-md hover:opacity-90 transition disabled:opacity-50"
               >
-                <Save className="h-4 w-4" />
+                {platformConfigMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
                 Deploy Platform Policies
               </button>
             </div>

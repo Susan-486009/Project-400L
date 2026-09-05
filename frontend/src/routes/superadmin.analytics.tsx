@@ -117,21 +117,18 @@ function AnalyticsPage() {
           value={total.toLocaleString()}
           icon={Inbox}
           description="Lifetime submissions"
-          trend={{ value: 12, isPositive: true }}
         />
         <AnalyticCard
           label="Resolution Rate"
           value={`${resolutionRate}%`}
           icon={CheckCircle2}
           description="Cases successfully closed"
-          trend={{ value: 5, isPositive: true }}
         />
         <AnalyticCard
-          label="Avg. Response"
+          label="Avg. Response (Simulated)"
           value="4.2h"
           icon={Clock}
-          description="Time to first review"
-          trend={{ value: 8, isPositive: false }}
+          description="Time to first review — sample figure, no live source"
         />
         <AnalyticCard
           label="Active Issues"
@@ -149,8 +146,8 @@ function AnalyticsPage() {
               <h3 className="text-sm font-semibold text-foreground">Submission Volume</h3>
               <p className="text-xs text-muted-foreground">Cases reported over the last 7 days</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-success">
-              <TrendingUp className="h-3.5 w-3.5" /> +14% from last week
+            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <TrendingUp className="h-3.5 w-3.5" /> Sample data — not live
             </div>
           </div>
           <div className="h-[280px] w-full">

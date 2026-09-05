@@ -13,6 +13,7 @@ import { Route as TrackRouteImport } from './routes/track'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as StaffRouteImport } from './routes/staff'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -34,7 +35,6 @@ import { Route as DashboardReportsRouteImport } from './routes/dashboard.reports
 import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
 import { Route as DashboardActivityRouteImport } from './routes/dashboard.activity'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
-import { Route as AdminCasesRouteImport } from './routes/admin.cases'
 import { Route as DashboardReportsIdRouteImport } from './routes/dashboard.reports.$id'
 
 const TrackRoute = TrackRouteImport.update({
@@ -55,6 +55,11 @@ const SubmitRoute = SubmitRouteImport.update({
 const StaffRoute = StaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -162,11 +167,6 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCasesRoute = AdminCasesRouteImport.update({
-  id: '/cases',
-  path: '/cases',
-  getParentRoute: () => AdminRoute,
-} as any)
 const DashboardReportsIdRoute = DashboardReportsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -180,11 +180,11 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/staff': typeof StaffRouteWithChildren
   '/submit': typeof SubmitRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/track': typeof TrackRoute
-  '/admin/cases': typeof AdminCasesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/dashboard/activity': typeof DashboardActivityRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -207,9 +207,9 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/submit': typeof SubmitRoute
   '/track': typeof TrackRoute
-  '/admin/cases': typeof AdminCasesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/dashboard/activity': typeof DashboardActivityRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -235,11 +235,11 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/staff': typeof StaffRouteWithChildren
   '/submit': typeof SubmitRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/track': typeof TrackRoute
-  '/admin/cases': typeof AdminCasesRoute
   '/admin/reports': typeof AdminReportsRoute
   '/dashboard/activity': typeof DashboardActivityRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
@@ -266,11 +266,11 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/staff'
     | '/submit'
     | '/superadmin'
     | '/track'
-    | '/admin/cases'
     | '/admin/reports'
     | '/dashboard/activity'
     | '/dashboard/notifications'
@@ -293,9 +293,9 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/submit'
     | '/track'
-    | '/admin/cases'
     | '/admin/reports'
     | '/dashboard/activity'
     | '/dashboard/notifications'
@@ -320,11 +320,11 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/staff'
     | '/submit'
     | '/superadmin'
     | '/track'
-    | '/admin/cases'
     | '/admin/reports'
     | '/dashboard/activity'
     | '/dashboard/notifications'
@@ -350,6 +350,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   StaffRoute: typeof StaffRouteWithChildren
   SubmitRoute: typeof SubmitRoute
   SuperadminRoute: typeof SuperadminRouteWithChildren
@@ -384,6 +385,13 @@ declare module '@tanstack/react-router' {
       path: '/staff'
       fullPath: '/staff'
       preLoaderRoute: typeof StaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -533,13 +541,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/cases': {
-      id: '/admin/cases'
-      path: '/cases'
-      fullPath: '/admin/cases'
-      preLoaderRoute: typeof AdminCasesRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/dashboard/reports/$id': {
       id: '/dashboard/reports/$id'
       path: '/$id'
@@ -551,13 +552,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
-  AdminCasesRoute: typeof AdminCasesRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminCasesRoute: AdminCasesRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -636,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   StaffRoute: StaffRouteWithChildren,
   SubmitRoute: SubmitRoute,
   SuperadminRoute: SuperadminRouteWithChildren,

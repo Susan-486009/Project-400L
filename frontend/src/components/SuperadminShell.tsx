@@ -1,4 +1,4 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
   Bell,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
-import { type User, notificationService } from "@/lib/api";
+import { type User, type Notification, notificationService } from "@/lib/api";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
@@ -25,14 +25,7 @@ export interface NavItem {
   icon: ComponentType<{ className?: string }>;
 }
 
-interface DashboardNotification {
-  _id: string;
-  title: string;
-  message: string;
-  is_read: boolean;
-  created_at: string;
-  reference_link?: string;
-}
+type DashboardNotification = Notification;
 
 export function SuperadminShell({
   nav,
@@ -50,7 +43,6 @@ export function SuperadminShell({
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const nav_ = useNavigate();
 
   // Persistent sidebar collapse state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -63,8 +55,6 @@ export function SuperadminShell({
   useEffect(() => {
     localStorage.setItem("resolve_sidebar_collapsed", String(sidebarCollapsed));
   }, [sidebarCollapsed]);
-
-
 
   // Redirect logic moved to beforeLoad in routes
 
@@ -155,27 +145,31 @@ export function SuperadminShell({
       <aside
         className={`fixed inset-y-0 left-0 z-40 transform border-r border-slate-800 bg-slate-950 text-slate-100 transition-all duration-300 lg:translate-x-0 flex flex-col ${
           sidebarCollapsed ? "lg:w-20 w-64" : "w-64"
-        } ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        } ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className={`flex h-16 items-center border-b border-border/50 transition-all duration-300 ${sidebarCollapsed ? "lg:justify-center lg:px-0" : "px-5"}`}>
+        <div
+          className={`flex h-16 items-center border-b border-border/50 transition-all duration-300 ${sidebarCollapsed ? "lg:justify-center lg:px-0" : "px-5"}`}
+        >
           <Logo compact={sidebarCollapsed} />
         </div>
-        
+
         <nav className="flex-1 flex flex-col gap-1 p-4 overflow-y-auto no-scrollbar select-none">
           {nav.map((n) => {
             const active = ["/superadmin", "/admin", "/dashboard", "/staff"].includes(n.to)
               ? path === n.to
               : path === n.to || path.startsWith(n.to + "/");
             return (
-              <motion.div whileHover={{ x: sidebarCollapsed ? 0 : 4 }} whileTap={{ scale: 0.96 }} key={n.to}>
+              <motion.div
+                whileHover={{ x: sidebarCollapsed ? 0 : 4 }}
+                whileTap={{ scale: 0.96 }}
+                key={n.to}
+              >
                 <Link
                   to={n.to}
                   onClick={() => setOpen(false)}
                   className={`flex items-center rounded-xl transition-all duration-300 font-semibold ${
-                    sidebarCollapsed 
-                      ? "lg:justify-center lg:px-0 lg:w-12 lg:h-12 mx-auto" 
+                    sidebarCollapsed
+                      ? "lg:justify-center lg:px-0 lg:w-12 lg:h-12 mx-auto"
                       : "px-3.5 py-2.5 gap-3"
                   } ${
                     active
@@ -206,13 +200,17 @@ export function SuperadminShell({
               className="flex w-full items-center rounded-xl py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-all duration-300 cursor-pointer"
               title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             >
-              <div className={`flex w-full items-center ${sidebarCollapsed ? "justify-center" : "px-3.5 gap-3"}`}>
+              <div
+                className={`flex w-full items-center ${sidebarCollapsed ? "justify-center" : "px-3.5 gap-3"}`}
+              >
                 {sidebarCollapsed ? (
                   <ChevronRight className="h-4.5 w-4.5 text-slate-400 transition-transform hover:scale-110" />
                 ) : (
                   <>
                     <ChevronRight className="h-4.5 w-4.5 text-slate-400 rotate-180" />
-                    <span className="text-xs tracking-wide uppercase font-semibold text-slate-500 animate-in fade-in duration-300">Collapse</span>
+                    <span className="text-xs tracking-wide uppercase font-semibold text-slate-500 animate-in fade-in duration-300">
+                      Collapse
+                    </span>
                   </>
                 )}
               </div>
@@ -221,9 +219,11 @@ export function SuperadminShell({
         </nav>
 
         {primaryAction && (
-          <div className={`p-4 border-t border-slate-800/40 shrink-0 transition-all duration-300 ${
-            sidebarCollapsed ? "lg:p-3" : "p-4"
-          }`}>
+          <div
+            className={`p-4 border-t border-slate-800/40 shrink-0 transition-all duration-300 ${
+              sidebarCollapsed ? "lg:p-3" : "p-4"
+            }`}
+          >
             <Link
               to={primaryAction.to}
               className={`flex items-center justify-center rounded-xl border border-accent/10 bg-primary font-semibold text-primary-foreground shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated active:scale-[0.98] ${
@@ -307,7 +307,9 @@ export function SuperadminShell({
                           <div className="flex items-start justify-between gap-2">
                             <h4 className="text-xs font-bold">{n.title}</h4>
                             <span className="whitespace-nowrap text-[10px] text-muted-foreground">
-                              {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                              {n.created_at
+                                ? formatDistanceToNow(new Date(n.created_at), { addSuffix: true })
+                                : ""}
                             </span>
                           </div>
                           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">

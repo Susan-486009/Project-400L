@@ -129,3 +129,28 @@ export const validateChangePassword = validate({
     ],
   },
 });
+
+/* ─── FORGOT PASSWORD schema ───────────────────────────── */
+export const validateForgotPassword = validate({
+  email: {
+    label: 'Email',
+    rules: [rules.required, rules.email],
+  },
+});
+
+/* ─── RESET PASSWORD schema ────────────────────────────── */
+export const validateResetPassword = validate({
+  token: {
+    label: 'Reset Token',
+    rules: [rules.required],
+  },
+  newPassword: {
+    label: 'New Password',
+    rules: [
+      rules.required,
+      rules.minLen(8),
+      rules.uppercase,
+      rules.digit,
+    ],
+  },
+});

@@ -14,7 +14,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "student" | "staff" | "admin";
+  role: "student" | "staff" | "admin" | "superadmin";
   matric: string;
   settings?: UserSettings;
 }
@@ -50,7 +50,7 @@ export interface Complaint {
   description: string;
   anonymous: boolean;
   priority: "low" | "normal" | "high" | "critical";
-  status: "pending" | "in_review" | "resolved" | "rejected";
+  status: "pending" | "in_review" | "resolved" | "fixed" | "rejected";
   files: ComplaintFile[];
   internalNotes?: InternalNote[];
   internal_notes?: InternalNote[];
@@ -80,6 +80,16 @@ export interface ComplaintSubmitResponse {
   files: ComplaintFile[];
 }
 
+export interface PaginatedComplaints {
+  complaints: Complaint[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
 export interface AnalyticsData {
   statusCounts: Record<string, number>;
   categoryStats: Array<{
@@ -107,6 +117,32 @@ export interface AuditLogEntry {
   requestId?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Notification {
+  _id: string;
+  id?: string;
+  title: string;
+  message?: string;
+  description?: string;
+  type?: string;
+  reference_link?: string;
+  is_read: boolean;
+  created_at?: string;
+  createdAt?: string;
+}
+
+export interface PlatformConfig {
+  _id?: string;
+  systemName: string;
+  maintenanceMode: boolean;
+  anonymousSubmissions: boolean;
+  slaTargetHours: number;
+  sessionTimeoutMinutes: number;
+  maxUploadLimitMb: number;
+  twoFactorEnforced: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const request = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
@@ -178,6 +214,16 @@ export const authService = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  forgotPassword: (email: string) =>
+    request<any>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, newPassword: string) =>
+    request<any>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }),
   getUsers: (params?: any) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
     return request<any>(`/auth/admin/users${qs}`);
@@ -194,7 +240,7 @@ export const authService = {
 export const complaintService = {
   getAll: (params?: any) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-    return request<Complaint[]>(`/complaints${qs}`);
+    return request<PaginatedComplaints>(`/complaints${qs}`);
   },
   getMine: () => request<Complaint[]>("/complaints/mine"),
   getById: (id: string) => request<Complaint>(`/complaints/${id}`),
@@ -238,9 +284,26 @@ export const departmentService = {
 };
 
 export const notificationService = {
-  getMine: () => request<any[]>("/notifications"),
+  getMine: () => request<Notification[]>("/notifications"),
   markAsRead: (id: string) => request<any>(`/notifications/${id}/read`, { method: "PATCH" }),
   markAllAsRead: () => request<any>("/notifications/read-all", { method: "PATCH" }),
+};
+
+export const aiService = {
+  rewrite: (text: string) =>
+    request<{ rewrittenText: string }>("/ai/rewrite", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    }),
+};
+
+export const platformConfigService = {
+  get: () => request<PlatformConfig>("/admin/platform-config"),
+  update: (config: Partial<PlatformConfig>) =>
+    request<PlatformConfig>("/admin/platform-config", {
+      method: "PUT",
+      body: JSON.stringify(config),
+    }),
 };
 
 export const auditService = {

@@ -6,6 +6,9 @@ import {
   signRefreshToken,
 } from '../utils/auth.js';
 import { AppError } from '../utils/response.js';
+import { PasswordResetToken } from '../models/PasswordResetToken.js';
+import { config } from '../config/config.js';
+import { sendResetEmail } from './email.service.js';
 
 export const authService = {
 
@@ -165,6 +168,76 @@ export const authService = {
     await User.findByIdAndUpdate(id, { password: hashed });
 
     return { message: 'Password updated successfully.' };
+  },
+
+  /* ══════════════════════════════════════════════════════
+     FORGOT PASSWORD
+     Generates a short-lived reset token and emails a reset
+     link. Returns a generic success message regardless of
+     whether the email exists (prevents account enumeration).
+  ══════════════════════════════════════════════════════ */
+  async forgotPassword({ email }) {
+    const norm = (email || '').trim().toLowerCase();
+    if (!norm) throw new AppError('Email is required.', 400);
+
+    const user = await User.findOne({ email: norm }).select('name email').lean();
+
+    // Always resolve successfully — never reveal whether the account exists.
+    if (user && user.email) {
+      const rawToken = PasswordResetToken.generateRawToken();
+      await PasswordResetToken.create({
+        user_id: user._id,
+        token_hash: PasswordResetToken.hashToken(rawToken),
+        expires_at: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes
+      });
+
+      const resetUrl = `${config.frontendUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+      await sendResetEmail({ to: user.email, name: user.name || 'there', resetUrl });
+    }
+
+    return {
+      message: 'If an account matches that email, a password reset link has been sent.',
+    };
+  },
+
+  /* ══════════════════════════════════════════════════════
+     RESET PASSWORD
+     Validates the plain-text token, ensures it is unused and
+     unexpired, then sets the new password and invalidates the
+     token (and revokes any outstanding sessions for safety).
+  ══════════════════════════════════════════════════════ */
+  async resetPassword({ token, newPassword }) {
+    if (!token) throw new AppError('Reset token is required.', 400);
+    if (!newPassword || String(newPassword).length < 8) {
+      throw new AppError('New password must be at least 8 characters.', 400);
+    }
+
+    const tokenHash = PasswordResetToken.hashToken(token);
+    const resetRecord = await PasswordResetToken.findOne({ token_hash: tokenHash });
+
+    if (!resetRecord || resetRecord.used_at) {
+      throw new AppError('Invalid or already-used reset token.', 400);
+    }
+    if (resetRecord.expires_at < new Date()) {
+      throw new AppError('This reset link has expired. Please request a new one.', 400);
+    }
+
+    const hashed = await hashPassword(newPassword);
+    await User.findByIdAndUpdate(resetRecord.user_id, { password: hashed });
+
+    // Invalidate the token so it cannot be reused.
+    resetRecord.used_at = new Date();
+    await resetRecord.save();
+
+    // Revoke all sessions for this user as an extra safety measure.
+    try {
+      const { TokenSession } = await import('../models/TokenSession.js');
+      await TokenSession.updateMany({ user_id: resetRecord.user_id }, { is_revoked: true });
+    } catch (err) {
+      console.error('Failed to revoke sessions after password reset:', err.message);
+    }
+
+    return { message: 'Your password has been reset successfully. Please sign in.' };
   },
 
   /* ══════════════════════════════════════════════════════

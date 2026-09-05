@@ -4,9 +4,7 @@ import {
   Search,
   Paperclip,
   Send,
-  MoreHorizontal,
   User,
-  Calendar,
   Building2,
   ShieldCheck,
   ChevronRight,
@@ -26,7 +24,7 @@ import {
 } from "lucide-react";
 import { StatusBadge, formatCategory } from "@/lib/ui-shared";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { complaintService, type Complaint } from "@/lib/api";
+import { complaintService, aiService } from "@/lib/api";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -70,10 +68,11 @@ function CasesPage() {
   // Custom states for premium responsiveness
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState<'resolution' | 'control'>('resolution');
+  const [page, setPage] = useState(1);
 
   const { data: cases, isLoading: listLoading } = useQuery({
-    queryKey: ["all-complaints"],
-    queryFn: () => complaintService.getAll(),
+    queryKey: ["all-complaints", page],
+    queryFn: () => complaintService.getAll({ page, limit: 50 }),
   });
 
   const { data: active, isLoading: detailLoading } = useQuery({
@@ -118,15 +117,8 @@ function CasesPage() {
 
   const aiEnhanceMutation = useMutation({
     mutationFn: async (text: string) => {
-      const token = localStorage.getItem("as_access_token") || localStorage.getItem("token");
-      const res = await fetch(`${SERVER_URL}/ai/rewrite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ text })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Failed to enhance text");
-      return data.data.rewrittenText;
+      const { rewrittenText } = await aiService.rewrite(text);
+      return rewrittenText;
     },
     onSuccess: (enhancedText) => {
       setReplyText(enhancedText);
@@ -138,7 +130,7 @@ function CasesPage() {
   });
 
   const casesList = useMemo(() => {
-    return Array.isArray(cases) ? cases : (cases as any)?.data || [];
+    return Array.isArray(cases?.complaints) ? cases.complaints : [];
   }, [cases]);
 
   const filtered = useMemo(() => {
@@ -693,6 +685,32 @@ function CasesPage() {
               })
             )}
           </ul>
+          {cases?.pagination && cases.pagination.pages > 1 && (
+            <div className="flex items-center justify-between border-t border-border/60 px-4 py-2.5">
+              <span className="text-[10px] font-medium text-muted-foreground">
+                {cases.pagination.total} total
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded border border-border bg-card text-muted-foreground hover:text-foreground disabled:opacity-40"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                </button>
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {page} / {cases.pagination.pages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(cases.pagination.pages, p + 1))}
+                  disabled={page >= cases.pagination.pages}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded border border-border bg-card text-muted-foreground hover:text-foreground disabled:opacity-40"
+                >
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sleek Floating Collapse Handle (Desktop only) */}

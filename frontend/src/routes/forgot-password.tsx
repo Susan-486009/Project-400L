@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Mail, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { AuthShell } from "@/components/AuthShell";
 import { Field } from "@/components/Field";
+import { authService } from "@/lib/api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({ meta: [{ title: "Reset password — LASUSTECH Resolution Center" }] }),
@@ -11,6 +13,22 @@ export const Route = createFileRoute("/forgot-password")({
 
 function ForgotPage() {
   const [sent, setSent] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await authService.forgotPassword(email.trim());
+      setSent(true);
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthShell
       title="Reset your password"
@@ -33,25 +51,22 @@ function ForgotPage() {
           </p>
         </div>
       ) : (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSent(true);
-          }}
-          className="space-y-5"
-        >
+        <form onSubmit={handleSubmit} className="space-y-5">
           <Field
             label="University email"
             type="email"
             placeholder="you@lasustech.edu.ng"
             leading={<Mail className="h-4 w-4" />}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 active:scale-[0.99]"
+            disabled={loading}
+            className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 active:scale-[0.99] disabled:opacity-70"
           >
-            Send reset link
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
           </button>
         </form>
       )}

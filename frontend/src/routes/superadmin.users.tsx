@@ -104,6 +104,7 @@ function AdminUsersPage() {
             <option value="student">Students</option>
             <option value="staff">Staff</option>
             <option value="admin">Admins</option>
+            <option value="superadmin">Super Admins</option>
           </select>
         </div>
       </div>

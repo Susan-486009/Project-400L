@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { complaintService, authService, type Complaint } from "@/lib/api";
 import { Shield, Users, Inbox, Activity } from "lucide-react";
@@ -9,6 +9,7 @@ export const Route = createFileRoute("/superadmin/")({
 });
 
 function SuperadminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [recentCases, setRecentCases] = useState<Complaint[]>([]);
@@ -63,8 +64,15 @@ function SuperadminDashboard() {
             <Shield className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">System Health</p>
-            <h2 className="text-2xl font-bold text-success">100%</h2>
+            <p className="text-sm font-medium text-muted-foreground">Resolution Rate</p>
+            <h2 className="text-2xl font-bold text-success">
+              {(() => {
+                const sc = stats?.statusCounts || {};
+                const t = Object.values(sc).reduce((a: number, b: any) => a + (b || 0), 0);
+                const r = (sc.resolved || 0) + (sc.fixed || 0);
+                return t > 0 ? `${Math.round((r / t) * 100)}%` : "—";
+              })()}
+            </h2>
           </div>
         </div>
 
@@ -73,8 +81,8 @@ function SuperadminDashboard() {
             <Activity className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Security Flags</p>
-            <h2 className="text-2xl font-bold">0</h2>
+            <p className="text-sm font-medium text-muted-foreground">Rejected Cases</p>
+            <h2 className="text-2xl font-bold">{stats?.statusCounts?.rejected || 0}</h2>
           </div>
         </div>
       </div>
@@ -83,11 +91,17 @@ function SuperadminDashboard() {
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <h3 className="font-semibold text-lg mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border p-4 hover:bg-accent/5 hover:border-accent/40 transition-colors">
+            <button
+              onClick={() => navigate({ to: "/superadmin/users" })}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border p-4 hover:bg-accent/5 hover:border-accent/40 transition-colors"
+            >
               <Users className="h-6 w-6 text-muted-foreground" />
               <span className="text-sm font-medium">Manage Users</span>
             </button>
-            <button className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border p-4 hover:bg-accent/5 hover:border-accent/40 transition-colors">
+            <button
+              onClick={() => navigate({ to: "/superadmin/audit" })}
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border p-4 hover:bg-accent/5 hover:border-accent/40 transition-colors"
+            >
               <Shield className="h-6 w-6 text-muted-foreground" />
               <span className="text-sm font-medium">Review Audit Log</span>
             </button>

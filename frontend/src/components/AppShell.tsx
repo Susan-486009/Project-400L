@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
-import { type User, notificationService } from "@/lib/api";
+import { type User, type Notification, notificationService } from "@/lib/api";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
@@ -25,14 +25,7 @@ export interface NavItem {
   icon: ComponentType<{ className?: string }>;
 }
 
-interface DashboardNotification {
-  _id: string;
-  title: string;
-  message: string;
-  is_read: boolean;
-  created_at: string;
-  reference_link?: string;
-}
+type DashboardNotification = Notification;
 
 export function AppShell({
   nav,
@@ -262,7 +255,9 @@ export function AppShell({
                           <div className="flex items-start justify-between gap-2">
                             <h4 className="text-xs font-bold">{n.title}</h4>
                             <span className="whitespace-nowrap text-[10px] text-muted-foreground">
-                              {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                              {n.created_at
+                                ? formatDistanceToNow(new Date(n.created_at), { addSuffix: true })
+                                : ""}
                             </span>
                           </div>
                           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">

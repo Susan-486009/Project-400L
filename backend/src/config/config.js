@@ -28,6 +28,17 @@ export const config = {
     groqApiKey: process.env.GROQ_API_KEY,
     groqModel:  process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
   },
+
+  email: {
+    resendApiKey: process.env.RESEND_API_KEY,
+    from: process.env.EMAIL_FROM || '"LASUSTECH Student Complaint Center" <onboarding@resend.dev>',
+    enabled: Boolean(process.env.RESEND_API_KEY),
+    // When set (testing), every outgoing email is redirected to this owner address
+    // so the Resend free tier can actually deliver it. Intended recipient is noted in body.
+    redirectTo: process.env.EMAIL_REDIRECT_TO || '',
+  },
+
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 };
 
 // Validate crucial environment variables at startup

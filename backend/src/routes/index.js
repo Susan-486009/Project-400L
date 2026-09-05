@@ -5,6 +5,7 @@ import departmentRoutes  from './department.routes.js';
 import notificationRoutes from './notification.routes.js';
 import aiRoutes          from './ai.routes.js';
 import auditRoutes       from './audit.routes.js';
+import platformConfigRoutes from './platformConfig.routes.js';
 import mongoose from 'mongoose';
 
 const router = Router();
@@ -15,6 +16,7 @@ router.use('/departments', departmentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/ai',          aiRoutes);
 router.use('/audit',       auditRoutes);
+router.use('/admin/platform-config', platformConfigRoutes);
 
 // Version endpoint for tracking deployments
 router.get('/version', (_req, res) => {

@@ -4,7 +4,6 @@ import {
   Building2,
   BarChart3,
   FileText,
-  ScrollText,
   Settings,
   Users,
   ShieldAlert,

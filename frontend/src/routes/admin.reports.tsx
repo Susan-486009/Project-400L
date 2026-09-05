@@ -159,7 +159,7 @@ function ComplaintsPage() {
   });
 
   const casesList = useMemo(() => {
-    return Array.isArray(cases) ? cases : (cases as any)?.data || [];
+    return Array.isArray(cases?.complaints) ? cases.complaints : [];
   }, [cases]);
 
   const filtered = useMemo(() => {

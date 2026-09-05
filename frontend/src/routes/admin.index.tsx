@@ -247,8 +247,8 @@ function AdminDashboardOverview() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {recentCases && recentCases.length > 0 ? (
-                    recentCases.slice(0, 5).map((c: any) => (
+                  {recentCases?.complaints && recentCases.complaints.length > 0 ? (
+                    recentCases.complaints.slice(0, 5).map((c: any) => (
                       <tr key={c._id} className="hover:bg-muted/10 transition-colors">
                         <td className="px-4 py-3.5 font-mono font-semibold text-accent">
                           <Link to="/admin/reports" className="hover:underline">

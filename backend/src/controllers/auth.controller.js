@@ -101,6 +101,18 @@ export const changePassword = asyncHandler(async (req, res) => {
   sendSuccess(res, result);
 });
 
+/* ── POST /api/v1/auth/forgot-password ───────────────── */
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const result = await authService.forgotPassword(req.body);
+  sendSuccess(res, result);
+});
+
+/* ── POST /api/v1/auth/reset-password ────────────────── */
+export const resetPassword = asyncHandler(async (req, res) => {
+  const result = await authService.resetPassword(req.body);
+  sendSuccess(res, result);
+});
+
 /* ── GET /api/v1/auth/admin/users ───────────────────── */
 export const getUsers = asyncHandler(async (req, res) => {
   const result = await authService.getAllUsers({ ...req.query, requesterRole: req.user.role });
